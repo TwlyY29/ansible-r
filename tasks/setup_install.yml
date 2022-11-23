@@ -1,0 +1,29 @@
+
+- include: repository.yml
+  tags:
+    - configuration
+    - r
+    - r-repository
+  become: yes
+
+- name: collect r dependencies
+  set_fact:
+    ms_r_merged_dependecies : "{{ r_dependencies + ms_r_install_dependencies }}"
+
+- include: install.yml
+  vars:
+    - r_dependencies: "{{ms_r_merged_dependecies}}"
+  tags:
+    - configuration
+    - r
+    - r-install
+  become: yes
+
+- include: packages.yml
+  vars:
+    - r_packages: '{{ms_r_install_r_packages}}'
+  tags:
+    - configuration
+    - r
+    - r-packages
+  become: yes

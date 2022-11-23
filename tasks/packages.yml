@@ -56,7 +56,7 @@
     }}"
   when:
     - not r_list_packages_once or item.name not in r_installed_packages
-    - item.state is undefined or item.state == 'present'
+    - item.state is undefined or item.state == 'present' or item.state == 'updated'
   tags:
     - r-packages-install
 

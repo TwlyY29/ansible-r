@@ -1,0 +1,52 @@
+- name: create list of packages to remove
+  set_fact:
+    ms_r_install_r_packages_absent: "{{ ms_r_install_r_packages_absent | default([]) + [ new_item ] }}"
+  vars:
+    new_item: "{ 
+      'name': '{{ item.name }}',
+      'state': 'absent',
+      {% if item.type is defined %}, 'type': '{{item.type}}'{%endif%}
+      {% if item.repos is defined %}, 'repos': '{{item.repos}}'{%endif%}
+    }"
+  with_items: "{{ ms_r_install_r_packages }}"
+  when: 
+    - (ms_r_install_r_packages|length)>0
+    - ms_r_uninstall_remove_packages|bool
+
+#~ - debug:
+    #~ msg: "{{ ms_r_install_r_packages_absent }}"
+  #~ when: (ms_r_install_r_packages|length)>0
+
+- include: packages.yml
+  vars:
+    - r_packages: '{{ms_r_install_r_packages_absent}}'
+  when:
+    - ms_r_install_r_packages_absent is defined
+    - (ms_r_install_r_packages_absent|length)>0
+    - ms_r_uninstall_remove_packages|bool
+  become: yes
+
+- name: install | additional
+  apt:
+    name: "{{ r_install }}"
+    state: absent
+  when: ms_r_uninstall_remove_r|bool
+  become: yes
+
+- name: repository | remove cran-r
+  apt_repository:
+    repo: "{{ item.type }} {{ item.url }}"
+    state: absent
+    update_cache: true
+    mode: 0644
+  with_items: "{{ r_repository }}"
+  when: ms_r_uninstall_remove_r|bool
+  become: yes
+
+- name: repository | remove public key
+  apt_key:
+    id: E298A3A825C0D65DFD57CBB651716619E084DAB9
+    keyserver: keyserver.ubuntu.com
+    state: absent
+  when: ms_r_uninstall_remove_r|bool
+  become: yes
